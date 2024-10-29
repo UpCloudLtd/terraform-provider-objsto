@@ -7,8 +7,20 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 )
+
+func passthroughUpdate[T any](ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var data T
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
 
 func getClientFromProviderData(providerData any) (client *s3.Client, diags diag.Diagnostics) {
 	if providerData == nil {

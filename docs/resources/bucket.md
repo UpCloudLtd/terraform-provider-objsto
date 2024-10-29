@@ -24,3 +24,7 @@ resource "objsto_bucket" "example" {
 ### Required
 
 - `bucket` (String) The name of the bucket.
+
+### Read-Only
+
+- `arn` (String) The ARN of the bucket. Can be used when referencing the bucket in policy documents.

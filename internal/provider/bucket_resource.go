@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -30,6 +31,7 @@ type BucketResource struct {
 // BucketResourceModel describes the resource data model.
 type BucketResourceModel struct {
 	Name types.String `tfsdk:"bucket"`
+	ARN  types.String `tfsdk:"arn"`
 }
 
 func (r *BucketResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -40,6 +42,14 @@ func (r *BucketResource) Schema(ctx context.Context, req resource.SchemaRequest,
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "A bucket resource that represents a bucket in an object storage service.",
 		Attributes: map[string]schema.Attribute{
+			"arn": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The ARN of the bucket. Can be used when referencing the bucket in policy documents.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 			"bucket": schema.StringAttribute{
 				Required:            true,
 				MarkdownDescription: "The name of the bucket.",
@@ -74,6 +84,7 @@ func (r *BucketResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
+	data.ARN = types.StringValue(fmt.Sprintf("arn:aws:s3:::%s", data.Name.ValueString()))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -96,18 +107,12 @@ func (r *BucketResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
+	data.ARN = types.StringValue(fmt.Sprintf("arn:aws:s3:::%s", data.Name.ValueString()))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *BucketResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data BucketResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	passthroughUpdate[BucketResourceModel](ctx, req, resp)
 }
 
 func (r *BucketResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {

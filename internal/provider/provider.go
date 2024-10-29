@@ -126,6 +126,7 @@ func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *ObjStoProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewBucketResource,
+		NewBucketPolicyResource,
 		NewObjectResource,
 	}
 }
