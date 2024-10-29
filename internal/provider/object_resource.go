@@ -37,6 +37,7 @@ type ObjectResourceModel struct {
 	Id      types.String `tfsdk:"id"`
 	Key     types.String `tfsdk:"key"`
 	Content types.String `tfsdk:"content"`
+	URL     types.String `tfsdk:"url"`
 }
 
 func (r *ObjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -74,6 +75,13 @@ func (r *ObjectResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				Required:            true,
 				MarkdownDescription: "The content of the object.",
 			},
+			"url": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The URL of the object.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -95,6 +103,13 @@ func (r *ObjectResource) put(ctx context.Context, data *ObjectResourceModel) (di
 	return
 }
 
+func buildURL(endpoint, bucket, key string) string {
+	if !strings.HasSuffix(endpoint, "/") {
+		endpoint += "/"
+	}
+	return fmt.Sprintf("%s%s/%s", endpoint, bucket, key)
+}
+
 func (r *ObjectResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data ObjectResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -104,6 +119,7 @@ func (r *ObjectResource) Create(ctx context.Context, req resource.CreateRequest,
 	}
 
 	data.Id = types.StringValue(fmt.Sprintf("%s/%s", data.Bucket.ValueString(), data.Key.ValueString()))
+	data.URL = types.StringValue(buildURL(*r.client.Options().BaseEndpoint, data.Bucket.ValueString(), data.Key.ValueString()))
 	resp.Diagnostics.Append(r.put(ctx, &data)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -159,6 +175,7 @@ func (r *ObjectResource) Read(ctx context.Context, req resource.ReadRequest, res
 	}
 
 	data.Content = types.StringValue(buf.String())
+	data.URL = types.StringValue(buildURL(*r.client.Options().BaseEndpoint, data.Bucket.ValueString(), data.Key.ValueString()))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

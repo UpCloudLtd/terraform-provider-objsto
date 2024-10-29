@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -55,7 +57,11 @@ func (r *BucketPolicyResource) Schema(ctx context.Context, req resource.SchemaRe
 				MarkdownDescription: "The policy to attach to the bucket.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.RequiresReplaceIf(
+						policyDocumentRequiresReplace,
+						policyDocumentRequiresReplaceDescription,
+						policyDocumentRequiresReplaceDescription,
+					),
 				},
 			},
 		},
@@ -110,7 +116,23 @@ func (r *BucketPolicyResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	data.Policy = types.StringValue(*output.Policy)
+	apiDocument, diags := normalizePolicyDocument(*output.Policy)
+	resp.Diagnostics.Append(diags...)
+	// Document is required, so it should only be empty during import.
+	if data.Policy.IsNull() {
+		data.Policy = types.StringValue(apiDocument)
+	}
+
+	configDocument, diags := normalizePolicyDocument(data.Policy.ValueString())
+	resp.Diagnostics.Append(diags...)
+
+	if configDocument != apiDocument {
+		resp.Diagnostics.AddError(
+			"Configured policy document does not match the policy document in the API response",
+			fmt.Sprintf("Configured:   %s\nAPI response: %s", configDocument, apiDocument),
+		)
+	}
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -134,4 +156,44 @@ func (r *BucketPolicyResource) Delete(ctx context.Context, req resource.DeleteRe
 
 func (r *BucketPolicyResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("bucket"), req, resp)
+}
+
+var _ stringplanmodifier.RequiresReplaceIfFunc = policyDocumentRequiresReplace
+
+const policyDocumentRequiresReplaceDescription = "Policy document requires replace if the document in state does not match planned document after removing whitespace and unnecessary escapes."
+
+func policyDocumentRequiresReplace(ctx context.Context, req planmodifier.StringRequest, resp *stringplanmodifier.RequiresReplaceIfFuncResponse) {
+	var plan, state BucketPolicyResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	planDocument, diags := normalizePolicyDocument(plan.Policy.ValueString())
+	resp.Diagnostics.Append(diags...)
+	stateDocument, diags := normalizePolicyDocument(state.Policy.ValueString())
+	resp.Diagnostics.Append(diags...)
+
+	resp.RequiresReplace = planDocument != stateDocument
+}
+
+func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
+	errToDiags := func(err error) (diags diag.Diagnostics) {
+		diags.AddError(
+			"Unable to normalize object storage policy document",
+			err.Error(),
+		)
+		return
+	}
+
+	var unmarshaled interface{}
+	err := json.Unmarshal([]byte(document), &unmarshaled)
+	if err != nil {
+		return "", errToDiags(err)
+	}
+
+	marshaled, err := json.Marshal(unmarshaled)
+	if err != nil {
+		return "", errToDiags(err)
+	}
+
+	return string(marshaled), nil
 }

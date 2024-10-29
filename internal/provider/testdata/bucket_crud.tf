@@ -1,10 +1,10 @@
 variable "bucket_name" {
-  type = string
+  type    = string
   default = "objsto-acc-test"
 }
 
 variable "object_message" {
-  type = string
+  type    = string
   default = "Hello objsto!"
 }
 
