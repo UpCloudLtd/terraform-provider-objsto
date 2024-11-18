@@ -184,10 +184,21 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 		return
 	}
 
-	var unmarshaled interface{}
+	var unmarshaled map[string]interface{}
 	err := json.Unmarshal([]byte(document), &unmarshaled)
 	if err != nil {
 		return "", errToDiags(err)
+	}
+
+	// Change ID key into Id (Minio)
+	if id, ok := unmarshaled["ID"]; ok {
+		unmarshaled["Id"] = id
+		delete(unmarshaled, "ID")
+	}
+
+	// Remove "null" Id (UpCloud Managed Object Storage)
+	if id := unmarshaled["Id"]; id == "null" {
+		delete(unmarshaled, "Id")
 	}
 
 	marshaled, err := json.Marshal(unmarshaled)
