@@ -38,3 +38,4 @@ resource "objsto_object" "example" {
 ### Read-Only
 
 - `id` (String) The id of the object. The id is in `{bucket}/{key}` format.
+- `url` (String) The URL of the object.
