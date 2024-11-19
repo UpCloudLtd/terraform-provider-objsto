@@ -10,6 +10,8 @@ import (
 	s3_types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -40,7 +42,7 @@ type BucketLifecycleConfigurationResource struct {
 // BucketLifecycleConfigurationResourceModel describes the resource data model.
 type BucketLifecycleConfigurationResourceModel struct {
 	Bucket types.String `tfsdk:"bucket"`
-	Rules  types.List   `tfsdk:"rules"`
+	Rules  types.List   `tfsdk:"rule"`
 }
 
 type LifecycleConfigurationRule struct {
@@ -77,7 +79,7 @@ type LifecycleConfigurationRuleFilterAnd struct {
 	ObjectSizeLargerThan types.Int64  `tfsdk:"object_size_larger_than"`
 	ObjectSizeLessThan   types.Int64  `tfsdk:"object_size_less_than"`
 	Prefix               types.String `tfsdk:"prefix"`
-	Tag                  types.Set    `tfsdk:"tag"`
+	Tag                  types.Map    `tfsdk:"tags"`
 }
 
 func (m LifecycleConfigurationRuleFilterAnd) AttributeTypes() map[string]attr.Type {
@@ -85,10 +87,8 @@ func (m LifecycleConfigurationRuleFilterAnd) AttributeTypes() map[string]attr.Ty
 		"object_size_larger_than": types.Int64Type,
 		"object_size_less_than":   types.Int64Type,
 		"prefix":                  types.StringType,
-		"tag": basetypes.SetType{
-			ElemType: basetypes.ObjectType{
-				AttrTypes: Tag{}.AttributeTypes(),
-			},
+		"tags": basetypes.MapType{
+			ElemType: types.StringType,
 		},
 	}
 }
@@ -145,10 +145,14 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"rules": schema.ListNestedAttribute{
-				Required:            true,
+		},
+		Blocks: map[string]schema.Block{
+			"rule": schema.ListNestedBlock{
 				MarkdownDescription: "The lifecycle rules to apply to the bucket.",
-				NestedObject: schema.NestedAttributeObject{
+				Validators: []validator.List{
+					listvalidator.SizeAtLeast(1),
+				},
+				NestedObject: schema.NestedBlockObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
 							Required:            true,
@@ -169,9 +173,13 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 								),
 							},
 						},
-						"filter": schema.SingleNestedAttribute{
-							Required:            true,
+					},
+					Blocks: map[string]schema.Block{
+						"filter": schema.SingleNestedBlock{
 							MarkdownDescription: "A filter to select object that the rule applies to.",
+							Validators: []validator.Object{
+								objectvalidator.IsRequired(),
+							},
 							Attributes: map[string]schema.Attribute{
 								"object_size_larger_than": schema.Int64Attribute{
 									Optional:            true,
@@ -207,8 +215,9 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 										},
 									},
 								},
-								"and": schema.SingleNestedAttribute{
-									Optional:            true,
+							},
+							Blocks: map[string]schema.Block{
+								"and": schema.SingleNestedBlock{
 									MarkdownDescription: "A logical AND filter.",
 									Attributes: map[string]schema.Attribute{
 										"object_size_larger_than": schema.Int64Attribute{
@@ -223,35 +232,23 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 											Optional:            true,
 											MarkdownDescription: "The prefix of the object key.",
 										},
-										"tag": schema.SetNestedAttribute{
+										"tags": schema.MapAttribute{
 											Optional:            true,
 											MarkdownDescription: "The tags of the object.",
-											NestedObject: schema.NestedAttributeObject{
-												Attributes: map[string]schema.Attribute{
-													"key": schema.StringAttribute{
-														Required:            true,
-														MarkdownDescription: "The key of the tag.",
-													},
-													"value": schema.StringAttribute{
-														Required:            true,
-														MarkdownDescription: "The value of the tag.",
-													},
-												},
-											},
+											ElementType:         types.StringType,
 										},
 									},
 								},
 							},
 						},
-						"expiration": schema.SingleNestedAttribute{
-							Optional:            true,
+						"expiration": schema.SingleNestedBlock{
 							MarkdownDescription: "The expiration of the object.",
 							Attributes: map[string]schema.Attribute{
 								"date": schema.StringAttribute{
 									Optional:            true,
 									MarkdownDescription: "The date of the expiration.",
 									Validators: []validator.String{
-										stringvalidator.ExactlyOneOf(
+										stringvalidator.ConflictsWith(
 											path.MatchRelative().AtParent().AtName("days"),
 										),
 										isValidRFC3339{},
@@ -263,15 +260,14 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 								},
 							},
 						},
-						"noncurrent_version_expiration": schema.SingleNestedAttribute{
-							Optional:            true,
+						"noncurrent_version_expiration": schema.SingleNestedBlock{
 							MarkdownDescription: "The expiration of the noncurrent versions of the object.",
 							Attributes: map[string]schema.Attribute{
 								"newer_noncurrent_versions": schema.Int32Attribute{
 									Optional:            true,
 									MarkdownDescription: "The number of newer noncurrent versions.",
 									Validators: []validator.Int32{
-										int32validator.ExactlyOneOf(
+										int32validator.ConflictsWith(
 											path.MatchRelative().AtParent().AtName("noncurrent_days"),
 										),
 									},
@@ -340,16 +336,17 @@ func setRuleFilter(ctx context.Context, rule *s3_types.LifecycleRule, ruleData *
 		var filterAndData LifecycleConfigurationRuleFilterAnd
 		diags.Append(filterData.And.As(ctx, &filterAndData, objectAsOptions)...)
 
-		var filterAndTagsData []Tag
+		filterAndTagsData := make(map[string]types.String)
 		if !filterAndData.Tag.IsNull() {
 			diags.Append(filterAndData.Tag.ElementsAs(ctx, &filterAndTagsData, false)...)
 		}
 
 		filterAndTags := []s3_types.Tag{}
-		for _, filterAndTagData := range filterAndTagsData {
+		for key, value := range filterAndTagsData {
+			key := key
 			filterAndTags = append(filterAndTags, s3_types.Tag{
-				Key:   filterAndTagData.Key.ValueStringPointer(),
-				Value: filterAndTagData.Value.ValueStringPointer(),
+				Key:   &key,
+				Value: value.ValueStringPointer(),
 			})
 		}
 
@@ -426,14 +423,11 @@ func setLifecycleConfigurationValues(ctx context.Context, data *BucketLifecycleC
 			var andData LifecycleConfigurationRuleFilterAnd
 			and := types.ObjectNull(andData.AttributeTypes())
 			if filter.And != nil {
-				andTagsData := []Tag{}
+				andTagsData := make(map[string]attr.Value)
 				for _, tag := range filter.And.Tags {
-					andTagsData = append(andTagsData, Tag{
-						Key:   types.StringPointerValue(tag.Key),
-						Value: types.StringPointerValue(tag.Value),
-					})
+					andTagsData[*tag.Key] = types.StringPointerValue(tag.Value)
 				}
-				andTags, d := types.SetValueFrom(ctx, andData.Tag.ElementType(ctx), andTagsData)
+				andTags, d := types.MapValue(types.StringType, andTagsData)
 				diags.Append(d...)
 
 				andData = LifecycleConfigurationRuleFilterAnd{
