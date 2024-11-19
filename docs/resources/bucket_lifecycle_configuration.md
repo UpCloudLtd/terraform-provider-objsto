@@ -17,8 +17,8 @@ resource "objsto_bucket" "example" {
   bucket = "example"
 }
 
-resource "objsto_bucket_lifecycle_configuration" "this" {
-  bucket = objsto_bucket.this.bucket
+resource "objsto_bucket_lifecycle_configuration" "example" {
+  bucket = objsto_bucket.example.bucket
 
   rule {
     id = "Expire non-current versions after 7 days"
