@@ -109,12 +109,14 @@ func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRe
 
 	endpoint := withEnvDefault(data.Endpoint, envKeyEndpoint)
 	client := s3.New(s3.Options{
-		BaseEndpoint: &endpoint,
+		BaseEndpoint:  &endpoint,
+		ClientLogMode: aws.LogRetries | aws.LogRequestWithBody | aws.LogResponseWithBody,
 		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(
 			withEnvDefault(data.AccessKey, envKeyAccessKey),
 			withEnvDefault(data.SecretKey, envKeySecretKey),
 			"",
 		)),
+		Logger:       logger{ctx: ctx},
 		UsePathStyle: true,
 		Region:       withEnvDefault(data.Region, envKeyRegion),
 	})
@@ -126,6 +128,7 @@ func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *ObjStoProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewBucketResource,
+		NewBucketLifecycleConfigurationResource,
 		NewBucketPolicyResource,
 		NewObjectResource,
 	}

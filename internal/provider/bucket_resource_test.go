@@ -1,9 +1,8 @@
 package provider
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
+	"math/rand"
 	"os"
 	"regexp"
 	"testing"
@@ -11,6 +10,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
+
+// From Kubernetes random suffixes.
+const letterBytes = "bcdfghjklmnpqrstvwxz2456789"
+
+func RandomSuffix(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
 
 func withSuffix(name string) string {
 	job := os.Getenv("GITHUB_JOB")
@@ -20,9 +30,7 @@ func withSuffix(name string) string {
 		return fmt.Sprintf("%s-github-%s-%s.%s", name, job, runNumber, runAttempt)
 	}
 
-	randBytes := make([]byte, 8)
-	_, _ = rand.Read(randBytes)
-	randStr := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(randBytes)
+	randStr := RandomSuffix(8)
 
 	if os.Getenv("CI") != "" {
 		return fmt.Sprintf("%s-ci-%s", name, randStr)
