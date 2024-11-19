@@ -76,11 +76,11 @@ output "UPCLOUD_ENDPOINT" {
 }
 
 output "UPCLOUD_ACCESS_KEY" {
-    sensitive = true
-  value = upcloud_managed_object_storage_user_access_key.this.access_key_id
+  sensitive = true
+  value     = upcloud_managed_object_storage_user_access_key.this.access_key_id
 }
 
 output "UPCLOUD_SECRET_KEY" {
-    sensitive = true
-  value = upcloud_managed_object_storage_user_access_key.this.secret_access_key
+  sensitive = true
+  value     = upcloud_managed_object_storage_user_access_key.this.secret_access_key
 }
