@@ -76,7 +76,7 @@ jobs:
           OBJSTO_ENDPOINT: http://localhost:9000
           OBJSTO_REGION: local-1
         run: |
-          docker run -d -e MINIO_ROOT_USER=access_key -e MINIO_ROOT_PASSWORD=secret_key -p 9000:9000 minio/minio server /data
-
+          docker run -d -e MINIO_ROOT_USER=access_key -e MINIO_ROOT_PASSWORD=secret_key -e MINIO_BROWSER=off -p 9000:9000 minio/minio:RELEASE.2024-11-07T00-52-20Z server /data
+          
           go test -v -cover ./internal/provider/
         timeout-minutes: 10
