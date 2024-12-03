@@ -30,4 +30,13 @@ test:
 testacc:
 	TF_ACC=1 go test -v -cover -timeout 120m ./...
 
-.PHONY: fmt lint test testacc build install generate
+release-notes: CHANGELOG_HEADER = ^\#\# \[
+release-notes: CHANGELOG_VERSION = $(subst v,,$(VERSION))
+release-notes:
+	@awk \
+		'/${CHANGELOG_HEADER}${CHANGELOG_VERSION}/ { flag = 1; next } \
+		/${CHANGELOG_HEADER}/ { if ( flag ) { exit; } } \
+		flag { if ( n ) { print prev; } n++; prev = $$0 }' \
+		CHANGELOG.md
+
+.PHONY: fmt lint test testacc build install generate release-notes
