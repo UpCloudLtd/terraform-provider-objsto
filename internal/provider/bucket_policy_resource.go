@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -194,6 +195,24 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 	if id, ok := unmarshaled["ID"]; ok {
 		unmarshaled["Id"] = id
 		delete(unmarshaled, "ID")
+	}
+
+	// Sort statement actions (Minio)
+	if statements, ok := unmarshaled["Statement"].([]interface{}); ok {
+		for _, statement := range statements {
+			if statement, ok := statement.(map[string]interface{}); ok {
+				if actions, ok := statement["Action"].([]interface{}); ok {
+					sort.Slice(actions, func(i, j int) bool {
+						a, aOk := actions[i].(string)
+						b, bOk := actions[j].(string)
+						if !aOk || !bOk {
+							return false
+						}
+						return a < b
+					})
+				}
+			}
+		}
 	}
 
 	// Remove "null" Id (UpCloud Managed Object Storage)
