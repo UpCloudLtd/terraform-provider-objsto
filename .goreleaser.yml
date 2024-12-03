@@ -58,4 +58,5 @@ release:
   # If you want to manually examine the release before its live, uncomment this line:
   # draft: true
 changelog:
-  disable: true
+  # Enable changelog to be able to provide the changelog from release pipeline using --release-notes argument.
+  disable: false
