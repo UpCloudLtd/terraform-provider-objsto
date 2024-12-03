@@ -76,7 +76,34 @@ jobs:
           OBJSTO_ENDPOINT: http://localhost:9000
           OBJSTO_REGION: local-1
         run: |
-          docker run -d -e MINIO_ROOT_USER=access_key -e MINIO_ROOT_PASSWORD=secret_key -p 9000:9000 minio/minio server /data
+          docker run -d -e MINIO_ROOT_USER=access_key -e MINIO_ROOT_PASSWORD=secret_key -e MINIO_BROWSER=off -p 9000:9000 minio/minio:RELEASE.2024-11-07T00-52-20Z server /data
+          
+          go test -v -cover ./internal/provider/
+        timeout-minutes: 10
 
+  test-moto:
+    name: Acceptance Tests (moto)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # v4.2.1
+      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_wrapper: false
+      - run: go mod download
+      - env:
+          TF_ACC: "1"
+          OBJSTO_ACCESS_KEY: access_key
+          OBJSTO_SECRET_KEY: secret_key
+          OBJSTO_ENDPOINT: http://localhost:5000
+          OBJSTO_REGION: us-east-1
+        run: |
+          docker run -d -e MOTO_S3_ALLOW_CROSSACCOUNT_ACCESS=false -e MOTO_IAM_LOAD_MANAGED_POLICIES=false -e MOTO_EC2_LOAD_DEFAULT_AMIS=false -p 5000:5000 motoserver/moto:5.0.21
+          
           go test -v -cover ./internal/provider/
         timeout-minutes: 10
