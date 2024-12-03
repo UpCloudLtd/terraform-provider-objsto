@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/config"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"github.com/stretchr/testify/assert"
 )
 
 func checkGetUrl(name, key string, expectedStatus int) resource.TestCheckFunc {
@@ -28,6 +29,37 @@ func checkGetUrl(name, key string, expectedStatus int) resource.TestCheckFunc {
 			return fmt.Errorf(`expected GET %s status code to be %d, got %d`, url, expectedStatus, resp.StatusCode)
 		}
 		return nil
+	}
+}
+
+func TestNormalizePolicyDocument(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Change ID to Id",
+			input:    `{"ID":"PublicRead"}`,
+			expected: `{"Id":"PublicRead"}`,
+		},
+		{
+			name:     "Removes null Id",
+			input:    `{"Id":"null"}`,
+			expected: `{}`,
+		},
+		{
+			name:     "Sorts statement actions",
+			input:    `{"Statement":[{"Action":["s3:ListBucket","s3:GetBucketLocation"]}]}`,
+			expected: `{"Statement":[{"Action":["s3:GetBucketLocation","s3:ListBucket"]}]}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			actual, diags := normalizePolicyDocument(test.input)
+			assert.False(t, diags.HasError())
+			assert.Equal(t, test.expected, actual)
+		})
 	}
 }
 

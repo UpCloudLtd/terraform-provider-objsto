@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- objsto_bucket_policy: when comparing policy documents, ignore statement action order because Minio returns actions in inconsistent order.
+
 ## [0.1.0]
 
 ### Added
