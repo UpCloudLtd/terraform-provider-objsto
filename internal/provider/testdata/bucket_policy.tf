@@ -8,6 +8,11 @@ variable "public_read_access" {
   default = true
 }
 
+variable "configure_cors" {
+  type    = bool
+  default = false
+}
+
 resource "objsto_bucket" "this" {
   bucket = var.bucket_name
 }
@@ -55,4 +60,18 @@ resource "objsto_bucket_policy" "this" {
       },
     ],
   })
+}
+
+resource "objsto_bucket_cors_configuration" "this" {
+  count = var.configure_cors ? 1 : 0
+
+  bucket = objsto_bucket.this.bucket
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD", "DELETE", "PUT", "POST"]
+    allowed_origins = ["*"]
+    expose_headers  = ["x-amz-server-side-encryption"]
+    max_age_seconds = 3000
+  }
 }
