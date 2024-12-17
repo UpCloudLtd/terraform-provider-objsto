@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added
+
+- objsto_bucket_cors_configuration resource for configuring CORS settings for buckets.
+
 ## [0.1.1]
 
 ### Fixed

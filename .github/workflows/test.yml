@@ -47,6 +47,7 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
+          TEST_TARGET: UpCloud
           OBJSTO_ACCESS_KEY: ${{ secrets.UPCLOUD_ACCESS_KEY }}
           OBJSTO_SECRET_KEY: ${{ secrets.UPCLOUD_SECRET_KEY }}
           OBJSTO_ENDPOINT: ${{ secrets.UPCLOUD_ENDPOINT }}
@@ -71,6 +72,7 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
+          TEST_TARGET: Minio
           OBJSTO_ACCESS_KEY: access_key
           OBJSTO_SECRET_KEY: secret_key
           OBJSTO_ENDPOINT: http://localhost:9000
@@ -98,6 +100,7 @@ jobs:
       - run: go mod download
       - env:
           TF_ACC: "1"
+          TEST_TARGET: moto
           OBJSTO_ACCESS_KEY: access_key
           OBJSTO_SECRET_KEY: secret_key
           OBJSTO_ENDPOINT: http://localhost:5000

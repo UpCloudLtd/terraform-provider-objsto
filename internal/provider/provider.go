@@ -64,7 +64,7 @@ func envAlternative(description, envKey string) string {
 
 func (p *ObjStoProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "The `objsto` provider is used to manage S3 compatible object storage services such as [UpCloud Managed Object Storage](https://upcloud.com/products/object-storage).",
+		MarkdownDescription: "The `objsto` provider is used to manage S3 compatible object storage services such as [UpCloud Managed Object Storage](https://upcloud.com/products/object-storage). The provider manages the resources using the S3 API of the target object storage service.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				MarkdownDescription: envAlternative("S3 endpoint of the object storage service", envKeyEndpoint),
@@ -128,6 +128,7 @@ func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRe
 func (p *ObjStoProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewBucketResource,
+		NewBucketCORSConfigurationResource,
 		NewBucketLifecycleConfigurationResource,
 		NewBucketPolicyResource,
 		NewObjectResource,
