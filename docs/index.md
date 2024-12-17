@@ -3,12 +3,12 @@
 page_title: "objsto Provider"
 subcategory: ""
 description: |-
-  The objsto provider is used to manage S3 compatible object storage services such as UpCloud Managed Object Storage https://upcloud.com/products/object-storage.
+  The objsto provider is used to manage S3 compatible object storage services such as UpCloud Managed Object Storage https://upcloud.com/products/object-storage. The provider manages the resources using the S3 API of the target object storage service.
 ---
 
 # objsto Provider
 
-The `objsto` provider is used to manage S3 compatible object storage services such as [UpCloud Managed Object Storage](https://upcloud.com/products/object-storage).
+The `objsto` provider is used to manage S3 compatible object storage services such as [UpCloud Managed Object Storage](https://upcloud.com/products/object-storage). The provider manages the resources using the S3 API of the target object storage service.
 
 ## Example Usage
 
