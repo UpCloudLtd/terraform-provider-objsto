@@ -61,9 +61,6 @@ func TestAccBucketCORSConfigurationResource(t *testing.T) {
 	if testTargetIs("Minio") {
 		t.Skip("Skipping CORS configuration tests because target object storage is Minio which does not support configuring CORS settings for buckets.")
 	}
-	if testTargetIs("moto") {
-		t.Skip("Skipping CORS configuration tests because target object storage is moto which configures wildcard CORS that overrides empty bucket CORS. See https://github.com/getmoto/moto/issues/8410")
-	}
 
 	bucket_name := withSuffix("bucket-cors-configuration")
 
