@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -14,7 +15,7 @@ import (
 // From Kubernetes random suffixes.
 const letterBytes = "bcdfghjklmnpqrstvwxz2456789"
 
-func RandomSuffix(n int) string {
+func randomSuffix(n int) string {
 	b := make([]byte, n)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
@@ -23,20 +24,25 @@ func RandomSuffix(n int) string {
 }
 
 func withSuffix(name string) string {
+	nameAndCli := fmt.Sprintf("%s-terraform", name)
+	if cliPath := os.Getenv("TF_ACC_TERRAFORM_PATH"); cliPath != "" {
+		nameAndCli = fmt.Sprintf("%s-%s", name, filepath.Base(cliPath))
+	}
+
 	job := os.Getenv("GITHUB_JOB")
 	runNumber := os.Getenv("GITHUB_RUN_NUMBER")
 	runAttempt := os.Getenv("GITHUB_RUN_ATTEMPT")
 	if runNumber != "" && runAttempt != "" {
-		return fmt.Sprintf("%s-github-%s-%s.%s", name, job, runNumber, runAttempt)
+		return fmt.Sprintf("%s-github-%s-%s.%s", nameAndCli, job, runNumber, runAttempt)
 	}
 
-	randStr := RandomSuffix(8)
+	randStr := randomSuffix(8)
 
 	if os.Getenv("CI") != "" {
-		return fmt.Sprintf("%s-ci-%s", name, randStr)
+		return fmt.Sprintf("%s-ci-%s", nameAndCli, randStr)
 	}
 
-	return fmt.Sprintf("%s-%s", name, randStr)
+	return fmt.Sprintf("%s-%s", nameAndCli, randStr)
 }
 
 func TestAccBucketResource_crud(t *testing.T) {
