@@ -107,7 +107,7 @@ jobs:
           OBJSTO_ENDPOINT: http://localhost:5000
           OBJSTO_REGION: us-east-1
         run: |
-          docker run -d -e MOTO_S3_ALLOW_CROSSACCOUNT_ACCESS=false -e MOTO_IAM_LOAD_MANAGED_POLICIES=false -e MOTO_EC2_LOAD_DEFAULT_AMIS=false -p 5000:5000 motoserver/moto:5.0.21
+          docker run -d -e MOTO_DISABLE_GLOBAL_CORS=yes -e MOTO_S3_ALLOW_CROSSACCOUNT_ACCESS=false -e MOTO_IAM_LOAD_MANAGED_POLICIES=false -e MOTO_EC2_LOAD_DEFAULT_AMIS=false -p 5000:5000 motoserver/moto:5.0.28
           
           go test -v -cover ./internal/provider/
         timeout-minutes: 10
