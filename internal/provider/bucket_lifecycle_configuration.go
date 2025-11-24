@@ -8,7 +8,6 @@ import (
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3_types "github.com/aws/aws-sdk-go-v2/service/s3/types"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/objectvalidator"
@@ -266,11 +265,6 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 								"newer_noncurrent_versions": schema.Int32Attribute{
 									Optional:            true,
 									MarkdownDescription: "The number of newer noncurrent versions.",
-									Validators: []validator.Int32{
-										int32validator.ConflictsWith(
-											path.MatchRelative().AtParent().AtName("noncurrent_days"),
-										),
-									},
 								},
 								"noncurrent_days": schema.Int32Attribute{
 									Optional:            true,
