@@ -103,38 +103,63 @@ func TestAccBucketPolicyResource(t *testing.T) {
 	})
 }
 
-func TestAccBucketPolicyResource_NoId(t *testing.T) {
-	bucket_name := withSuffix("bucket-policy-no-id")
-	variables := func(allow_get_object bool) map[string]config.Variable {
-		return map[string]config.Variable{
-			"bucket_name":      config.StringVariable(bucket_name),
-			"allow_get_object": config.BoolVariable(allow_get_object),
-		}
+func TestAccBucketPolicyResource_Normalization(t *testing.T) {
+	tests := []struct {
+		configName string
+		testImport bool
+	}{
+		{
+			configName: "bucket_policy_str_action",
+			testImport: false,
+		},
+		{
+			configName: "bucket_policy_no_id",
+			testImport: true,
+		},
 	}
 
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				ConfigFile:      config.StaticFile("testdata/bucket_policy_no_id.tf"),
-				ConfigVariables: variables(false),
-				Check:           resource.ComposeAggregateTestCheckFunc(),
-			},
-			{
-				ConfigFile:      config.StaticFile("testdata/bucket_policy_no_id.tf"),
-				ConfigVariables: variables(true),
-				Check:           resource.ComposeAggregateTestCheckFunc(),
-			},
-			{
-				ConfigFile:                           config.StaticFile("testdata/bucket_policy_no_id.tf"),
-				ConfigVariables:                      variables(true),
-				ResourceName:                         "objsto_bucket_policy.this",
-				ImportState:                          true,
-				ImportStateId:                        bucket_name,
-				ImportStateVerifyIdentifierAttribute: "bucket",
-				ImportStateVerify:                    true,
-			},
-		},
-	})
+	for _, test := range tests {
+		t.Run(test.configName, func(t *testing.T) {
+			configPath := fmt.Sprintf("testdata/%s.tf", test.configName)
+
+			bucket_name := withSuffix("bucket-policy-no-id")
+			variables := func(allow_get_object bool) map[string]config.Variable {
+				return map[string]config.Variable{
+					"bucket_name":      config.StringVariable(bucket_name),
+					"allow_get_object": config.BoolVariable(allow_get_object),
+				}
+			}
+
+			steps := []resource.TestStep{
+				{
+					ConfigFile:      config.StaticFile(configPath),
+					ConfigVariables: variables(false),
+					Check:           resource.ComposeAggregateTestCheckFunc(),
+				},
+				{
+					ConfigFile:      config.StaticFile(configPath),
+					ConfigVariables: variables(true),
+					Check:           resource.ComposeAggregateTestCheckFunc(),
+				},
+			}
+
+			if test.testImport {
+				steps = append(steps, resource.TestStep{
+					ConfigFile:                           config.StaticFile(configPath),
+					ConfigVariables:                      variables(true),
+					ResourceName:                         "objsto_bucket_policy.this",
+					ImportState:                          true,
+					ImportStateId:                        bucket_name,
+					ImportStateVerifyIdentifierAttribute: "bucket",
+					ImportStateVerify:                    true,
+				})
+			}
+
+			resource.Test(t, resource.TestCase{
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				Steps:                    steps,
+			})
+		})
+	}
 }
