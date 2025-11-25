@@ -8,6 +8,7 @@ on:
     - '**.go'
     - 'go.mod'
     - 'go.sum'
+    - 'internal/provider/testdata/*.tf'
     - '.github/workflows/test.yml'
   push:
     branches:
@@ -16,6 +17,7 @@ on:
     - '**.go'
     - 'go.mod'
     - 'go.sum'
+    - 'internal/provider/testdata/*.tf'
     - '.github/workflows/test.yml'
 
 permissions:
@@ -51,6 +53,7 @@ jobs:
         cli:
           - terraform
           - tofu
+      fail-fast: false
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
