@@ -197,10 +197,15 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 		delete(unmarshaled, "ID")
 	}
 
-	// Sort statement actions (Minio)
 	if statements, ok := unmarshaled["Statement"].([]interface{}); ok {
 		for _, statement := range statements {
 			if statement, ok := statement.(map[string]interface{}); ok {
+				// Always use array type for Action (Minio)
+				if action, ok := statement["Action"].(string); ok {
+					statement["Action"] = []string{action}
+				}
+
+				// Sort statement actions (Minio)
 				if actions, ok := statement["Action"].([]interface{}); ok {
 					sort.Slice(actions, func(i, j int) bool {
 						a, aOk := actions[i].(string)

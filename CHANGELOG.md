@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- objsto_bucket_policy: when comparing policy documents, treat string value in `Action` field as equal to list containing that string as its only item, e.g. `"s3:PutObject"` vs. `["s3:PutObject"]`.
+
 ## [0.2.0]
 
 ### Added
