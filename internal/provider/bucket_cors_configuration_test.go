@@ -53,13 +53,22 @@ func checkCORSHeaders(name, key, origin string, expectedHeaders map[string]strin
 	}
 }
 
-func testTargetIs(target string) bool {
-	return strings.EqualFold(os.Getenv("TEST_TARGET"), target)
+func testTarget() string {
+	return os.Getenv("TEST_TARGET")
+}
+
+func testTargetIs(target ...string) bool {
+	for _, t := range target {
+		if strings.EqualFold(testTarget(), t) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestAccBucketCORSConfigurationResource(t *testing.T) {
-	if testTargetIs("Minio") {
-		t.Skip("Skipping CORS configuration tests because target object storage is Minio which does not support configuring CORS settings for buckets.")
+	if testTargetIs("Minio", "RustFS") {
+		t.Skipf("Skipping CORS configuration tests because target object storage is %s which does not support configuring CORS settings for buckets.", testTarget())
 	}
 
 	bucket_name := withSuffix("bucket-cors-configuration")
