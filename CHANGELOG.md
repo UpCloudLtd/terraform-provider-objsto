@@ -5,6 +5,11 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Fixed
+
+- objsto_bucket_policy: when comparing policy documents, treat wildcard `Principal` value (`"*"`) as equal to `{"AWS": ["*"]}`.
+- objsto_bucket_policy: when comparing policy documents, treat string value in `Principal` field as equal to list containing that string as its only item, e.g. `{"AWS": "*"}` vs. `{"AWS": ["*"]}`.
+
 ## [0.2.1]
 
 ### Fixed
