@@ -223,6 +223,15 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 						"AWS": []string{"*"},
 					}
 				}
+
+				// Always use array type for Principal values
+				if principal, ok := statement["Principal"].(map[string]interface{}); ok {
+					for key, value := range principal {
+						if s, ok := value.(string); ok {
+							principal[key] = []string{s}
+						}
+					}
+				}
 			}
 		}
 	}
