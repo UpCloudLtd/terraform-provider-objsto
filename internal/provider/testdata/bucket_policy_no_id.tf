@@ -18,9 +18,7 @@ resource "objsto_bucket_policy" "this" {
     Version = "2012-10-17",
     Statement = [
       {
-        Principal = {
-          "AWS" = ["*"]
-        }
+        Principal = "*"
         Effect = var.allow_get_object ? "Allow" : "Deny"
         Action = [
           "s3:GetObject",

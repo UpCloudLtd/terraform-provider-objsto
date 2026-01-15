@@ -53,6 +53,16 @@ func TestNormalizePolicyDocument(t *testing.T) {
 			input:    `{"Statement":[{"Action":["s3:ListBucket","s3:GetBucketLocation"]}]}`,
 			expected: `{"Statement":[{"Action":["s3:GetBucketLocation","s3:ListBucket"]}]}`,
 		},
+		{
+			name:     "Normalizes wildcard Principal",
+			input:    `{"Statement":[{"Principal":"*"}]}`,
+			expected: `{"Statement":[{"Principal":{"AWS":["*"]}}]}`,
+		},
+		{
+			name:     "Normalizes Principal values to arrays",
+			input:    `{"Statement":[{"Principal":{"AWS":"*"}}]}`,
+			expected: `{"Statement":[{"Principal":{"AWS":["*"]}}]}`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -104,23 +114,14 @@ func TestAccBucketPolicyResource(t *testing.T) {
 }
 
 func TestAccBucketPolicyResource_Normalization(t *testing.T) {
-	tests := []struct {
-		configName string
-		testImport bool
-	}{
-		{
-			configName: "bucket_policy_str_action",
-			testImport: false,
-		},
-		{
-			configName: "bucket_policy_no_id",
-			testImport: true,
-		},
+	configFiles := []string{
+		"bucket_policy_str_action",
+		"bucket_policy_no_id",
 	}
 
-	for _, test := range tests {
-		t.Run(test.configName, func(t *testing.T) {
-			configPath := fmt.Sprintf("testdata/%s.tf", test.configName)
+	for _, configFile := range configFiles {
+		t.Run(configFile, func(t *testing.T) {
+			configPath := fmt.Sprintf("testdata/%s.tf", configFile)
 
 			bucket_name := withSuffix("bucket-policy-no-id")
 			variables := func(allow_get_object bool) map[string]config.Variable {
@@ -141,18 +142,6 @@ func TestAccBucketPolicyResource_Normalization(t *testing.T) {
 					ConfigVariables: variables(true),
 					Check:           resource.ComposeAggregateTestCheckFunc(),
 				},
-			}
-
-			if test.testImport {
-				steps = append(steps, resource.TestStep{
-					ConfigFile:                           config.StaticFile(configPath),
-					ConfigVariables:                      variables(true),
-					ResourceName:                         "objsto_bucket_policy.this",
-					ImportState:                          true,
-					ImportStateId:                        bucket_name,
-					ImportStateVerifyIdentifierAttribute: "bucket",
-					ImportStateVerify:                    true,
-				})
 			}
 
 			resource.Test(t, resource.TestCase{

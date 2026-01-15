@@ -191,7 +191,7 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 		return "", errToDiags(err)
 	}
 
-	// Change ID key into Id (Minio)
+	// Change ID key into Id
 	if id, ok := unmarshaled["ID"]; ok {
 		unmarshaled["Id"] = id
 		delete(unmarshaled, "ID")
@@ -200,12 +200,12 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 	if statements, ok := unmarshaled["Statement"].([]interface{}); ok {
 		for _, statement := range statements {
 			if statement, ok := statement.(map[string]interface{}); ok {
-				// Always use array type for Action (Minio)
+				// Always use array type for Action
 				if action, ok := statement["Action"].(string); ok {
 					statement["Action"] = []string{action}
 				}
 
-				// Sort statement actions (Minio)
+				// Sort statement actions
 				if actions, ok := statement["Action"].([]interface{}); ok {
 					sort.Slice(actions, func(i, j int) bool {
 						a, aOk := actions[i].(string)
@@ -216,11 +216,27 @@ func normalizePolicyDocument(document string) (string, diag.Diagnostics) {
 						return a < b
 					})
 				}
+
+				// Use {"AWS": ["*"]} instead of "*" for Principal
+				if _, ok := statement["Principal"].(string); ok {
+					statement["Principal"] = map[string]interface{}{
+						"AWS": []string{"*"},
+					}
+				}
+
+				// Always use array type for Principal values
+				if principal, ok := statement["Principal"].(map[string]interface{}); ok {
+					for key, value := range principal {
+						if s, ok := value.(string); ok {
+							principal[key] = []string{s}
+						}
+					}
+				}
 			}
 		}
 	}
 
-	// Remove "null" Id (UpCloud Managed Object Storage)
+	// Remove "null" Id
 	if id := unmarshaled["Id"]; id == "null" {
 		delete(unmarshaled, "Id")
 	}
