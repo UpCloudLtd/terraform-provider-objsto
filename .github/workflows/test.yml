@@ -50,6 +50,7 @@ jobs:
           - UpCloud
           - Minio
           - moto
+          - RustFS
         cli:
           - terraform
           - tofu
@@ -117,3 +118,17 @@ jobs:
           go test -v -cover ./internal/provider/
         timeout-minutes: 10
         if: matrix.target == 'moto'
+      - name: Test against RustFS
+        env:
+          TF_ACC: "1"
+          TEST_TARGET: RustFS
+          OBJSTO_ACCESS_KEY: access_key
+          OBJSTO_SECRET_KEY: secret_key
+          OBJSTO_ENDPOINT: http://localhost:9000
+          OBJSTO_REGION: local-1
+        run: |
+          docker run -d -e RUSTFS_ACCESS_KEY=access_key -e RUSTFS_SECRET_KEY=secret_key -p 9000:9000 rustfs/rustfs:1.0.0-alpha.83 /data
+
+          go test -v -cover ./internal/provider/
+        timeout-minutes: 10
+        if: matrix.target == 'RustFS'
