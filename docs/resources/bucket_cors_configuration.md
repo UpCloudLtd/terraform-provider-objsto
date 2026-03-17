@@ -17,7 +17,7 @@ resource "objsto_bucket" "example" {
   bucket = "example"
 }
 
-resource "objsto_bucket_cors_configuration" "this" {
+resource "objsto_bucket_cors_configuration" "example" {
   bucket = objsto_bucket.example.bucket
 
   cors_rule {

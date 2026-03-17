@@ -3,6 +3,7 @@ package provider
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/config"
@@ -82,7 +83,7 @@ func TestAccBucketPolicyResource(t *testing.T) {
 		}
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
@@ -123,7 +124,7 @@ func TestAccBucketPolicyResource_Normalization(t *testing.T) {
 		t.Run(configFile, func(t *testing.T) {
 			configPath := fmt.Sprintf("testdata/%s.tf", configFile)
 
-			bucket_name := withSuffix("bucket-policy-no-id")
+			bucket_name := withSuffix(strings.ReplaceAll(configFile, "_", "-"))
 			variables := func(allow_get_object bool) map[string]config.Variable {
 				return map[string]config.Variable{
 					"bucket_name":      config.StringVariable(bucket_name),
@@ -144,7 +145,7 @@ func TestAccBucketPolicyResource_Normalization(t *testing.T) {
 				},
 			}
 
-			resource.Test(t, resource.TestCase{
+			resource.ParallelTest(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 				Steps:                    steps,

@@ -51,7 +51,7 @@ func TestAccBucketResource_crud(t *testing.T) {
 		"bucket_name": config.StringVariable(bucket_name),
 	}
 
-	resource.Test(t, resource.TestCase{
+	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

@@ -99,14 +99,7 @@ func (p *ObjStoProvider) Schema(ctx context.Context, req provider.SchemaRequest,
 	}
 }
 
-func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data ObjStoProviderModel
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+func getClient(ctx context.Context, data ObjStoProviderModel) *s3.Client {
 	endpoint := withEnvDefault(data.Endpoint, envKeyEndpoint)
 	client := s3.New(s3.Options{
 		BaseEndpoint:  &endpoint,
@@ -121,6 +114,19 @@ func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRe
 		Region:       withEnvDefault(data.Region, envKeyRegion),
 	})
 
+	return client
+}
+
+func (p *ObjStoProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data ObjStoProviderModel
+	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	client := getClient(ctx, data)
+
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
@@ -131,6 +137,7 @@ func (p *ObjStoProvider) Resources(ctx context.Context) []func() resource.Resour
 		NewBucketCORSConfigurationResource,
 		NewBucketLifecycleConfigurationResource,
 		NewBucketPolicyResource,
+		NewBucketVersioningResource,
 		NewObjectResource,
 	}
 }
