@@ -73,9 +73,9 @@ Optional Attributes:
 
 Blocks:
 
-- `expiration` (Block, Optional) The expiration of the object. (see [below for nested schema](#nestedblock--rule--expiration))
-- `filter` (Block, Optional) A filter to select object that the rule applies to. (see [below for nested schema](#nestedblock--rule--filter))
-- `noncurrent_version_expiration` (Block, Optional) The expiration of the noncurrent versions of the object. (see [below for nested schema](#nestedblock--rule--noncurrent_version_expiration))
+- `expiration` (Block) The expiration of the object. (see [below for nested schema](#nestedblock--rule--expiration))
+- `filter` (Block) A filter to select object that the rule applies to. (see [below for nested schema](#nestedblock--rule--filter))
+- `noncurrent_version_expiration` (Block) The expiration of the noncurrent versions of the object. (see [below for nested schema](#nestedblock--rule--noncurrent_version_expiration))
 
 <a id="nestedblock--rule--expiration"></a>
 ### Nested Schema for `rule.expiration`
@@ -98,7 +98,7 @@ Optional Attributes:
 
 Blocks:
 
-- `and` (Block, Optional) A logical AND filter. (see [below for nested schema](#nestedblock--rule--filter--and))
+- `and` (Block) A logical AND filter. (see [below for nested schema](#nestedblock--rule--filter--and))
 
 <a id="nestedatt--rule--filter--tag"></a>
 ### Nested Schema for `rule.filter.tag`

@@ -35,7 +35,7 @@ resource "objsto_bucket_versioning" "example" {
 
 ### Blocks
 
-- `versioning_configuration` (Block, Optional) A versioning configuration to apply to the bucket. (see [below for nested schema](#nestedblock--versioning_configuration))
+- `versioning_configuration` (Block) A versioning configuration to apply to the bucket. (see [below for nested schema](#nestedblock--versioning_configuration))
 
 <a id="nestedblock--versioning_configuration"></a>
 ### Nested Schema for `versioning_configuration`
