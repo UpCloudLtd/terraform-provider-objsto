@@ -39,3 +39,4 @@ resource "objsto_object" "example" {
 
 - `id` (String) The id of the object. The id is in `{bucket}/{key}` format.
 - `url` (String) The URL of the object.
+- `version_id` (String) The version ID of the object. This is only set if the bucket has versioning enabled.

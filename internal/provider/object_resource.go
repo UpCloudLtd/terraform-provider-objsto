@@ -33,11 +33,12 @@ type ObjectResource struct {
 
 // ObjectResourceModel describes the resource data model.
 type ObjectResourceModel struct {
-	Bucket  types.String `tfsdk:"bucket"`
-	Id      types.String `tfsdk:"id"`
-	Key     types.String `tfsdk:"key"`
-	Content types.String `tfsdk:"content"`
-	URL     types.String `tfsdk:"url"`
+	Bucket    types.String `tfsdk:"bucket"`
+	Id        types.String `tfsdk:"id"`
+	Key       types.String `tfsdk:"key"`
+	Content   types.String `tfsdk:"content"`
+	URL       types.String `tfsdk:"url"`
+	VersionID types.String `tfsdk:"version_id"`
 }
 
 func (r *ObjectResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -82,6 +83,10 @@ func (r *ObjectResource) Schema(ctx context.Context, req resource.SchemaRequest,
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"version_id": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The version ID of the object. This is only set if the bucket has versioning enabled.",
+			},
 		},
 	}
 }
@@ -92,13 +97,18 @@ func (r *ObjectResource) Configure(ctx context.Context, req resource.ConfigureRe
 
 func (r *ObjectResource) put(ctx context.Context, data *ObjectResourceModel) (diags diag.Diagnostics) {
 	body := strings.NewReader(data.Content.ValueString())
-	_, err := r.client.PutObject(ctx, &s3.PutObjectInput{
+	output, err := r.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket: data.Bucket.ValueStringPointer(),
 		Key:    data.Key.ValueStringPointer(),
 		Body:   body,
 	})
 	if err != nil {
 		diags.AddError("Unable to create object", err.Error())
+	}
+	if output.VersionId == nil {
+		data.VersionID = types.StringNull()
+	} else {
+		data.VersionID = types.StringValue(*output.VersionId)
 	}
 	return
 }
@@ -162,6 +172,12 @@ func (r *ObjectResource) Read(ctx context.Context, req resource.ReadRequest, res
 		}
 		resp.Diagnostics.AddError("Unable to read object", err.Error())
 		return
+	}
+
+	if output.VersionId == nil {
+		data.VersionID = types.StringNull()
+	} else {
+		data.VersionID = types.StringValue(*output.VersionId)
 	}
 
 	buf := new(strings.Builder)
