@@ -94,14 +94,16 @@ func (m LifecycleConfigurationRuleFilterAnd) AttributeTypes() map[string]attr.Ty
 }
 
 type LifecycleConfigurationRuleExpiration struct {
-	Date types.String `tfsdk:"date"`
-	Days types.Int32  `tfsdk:"days"`
+	Date                      types.String `tfsdk:"date"`
+	Days                      types.Int32  `tfsdk:"days"`
+	ExpiredObjectDeleteMarker types.Bool   `tfsdk:"expired_object_delete_marker"`
 }
 
 func (m LifecycleConfigurationRuleExpiration) AttributeTypes() map[string]attr.Type {
 	return map[string]attr.Type{
-		"date": types.StringType,
-		"days": types.Int32Type,
+		"date":                         types.StringType,
+		"days":                         types.Int32Type,
+		"expired_object_delete_marker": types.BoolType,
 	}
 }
 
@@ -129,11 +131,11 @@ func (m Tag) AttributeTypes() map[string]attr.Type {
 	}
 }
 
-func (r *BucketLifecycleConfigurationResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *BucketLifecycleConfigurationResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_bucket_lifecycle_configuration"
 }
 
-func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *BucketLifecycleConfigurationResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "A bucket lifecycle configuration resource. Note that there can only be one lifecycle configuration per bucket.",
 		Attributes: map[string]schema.Attribute{
@@ -250,6 +252,7 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 									Validators: []validator.String{
 										stringvalidator.ConflictsWith(
 											path.MatchRelative().AtParent().AtName("days"),
+											path.MatchRelative().AtParent().AtName("expired_object_delete_marker"),
 										),
 										isValidRFC3339{},
 									},
@@ -257,6 +260,16 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 								"days": schema.Int32Attribute{
 									Optional:            true,
 									MarkdownDescription: "The number of days until expiration.",
+									Validators: []validator.Int32{
+										int32validator.ConflictsWith(
+											path.MatchRelative().AtParent().AtName("date"),
+											path.MatchRelative().AtParent().AtName("expired_object_delete_marker"),
+										),
+									},
+								},
+								"expired_object_delete_marker": schema.BoolAttribute{
+									Optional:            true,
+									MarkdownDescription: "Whether to remove expired object delete markers.",
 								},
 							},
 						},
@@ -285,7 +298,7 @@ func (r *BucketLifecycleConfigurationResource) Schema(ctx context.Context, req r
 	}
 }
 
-func (r *BucketLifecycleConfigurationResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *BucketLifecycleConfigurationResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	r.client, resp.Diagnostics = getClientFromProviderData(req.ProviderData)
 }
 
@@ -311,8 +324,9 @@ func setRuleExpiration(ctx context.Context, rule *s3_types.LifecycleRule, ruleDa
 		date = &date_
 	}
 	rule.Expiration = &s3_types.LifecycleExpiration{
-		Date: date,
-		Days: expirationData.Days.ValueInt32Pointer(),
+		Date:                      date,
+		Days:                      expirationData.Days.ValueInt32Pointer(),
+		ExpiredObjectDeleteMarker: expirationData.ExpiredObjectDeleteMarker.ValueBoolPointer(),
 	}
 	return
 }
@@ -395,7 +409,8 @@ func setLifecycleConfigurationValues(ctx context.Context, data *BucketLifecycleC
 
 		if rule.Expiration != nil {
 			value := LifecycleConfigurationRuleExpiration{
-				Days: types.Int32PointerValue(rule.Expiration.Days),
+				Days:                      types.Int32PointerValue(rule.Expiration.Days),
+				ExpiredObjectDeleteMarker: types.BoolPointerValue(rule.Expiration.ExpiredObjectDeleteMarker),
 			}
 			if rule.Expiration.Date != nil {
 				value.Date = types.StringValue(rule.Expiration.Date.Format(time.RFC3339))

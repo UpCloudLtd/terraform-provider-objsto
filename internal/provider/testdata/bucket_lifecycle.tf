@@ -7,8 +7,18 @@ resource "objsto_bucket" "this" {
   bucket = var.bucket_name
 }
 
+resource "objsto_bucket_versioning" "this" {
+  bucket = objsto_bucket.this.bucket
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 resource "objsto_bucket_lifecycle_configuration" "this" {
   bucket = objsto_bucket.this.bucket
+
+  depends_on = [objsto_bucket_versioning.this]
 
   rule {
     id = "Expire non-current versions after 7 days"
@@ -51,6 +61,18 @@ resource "objsto_bucket_lifecycle_configuration" "this" {
 
     expiration {
       days = 30
+    }
+  }
+
+  rule {
+    id = "Remove expired object delete markers"
+
+    filter {
+      prefix = "delete-markers/"
+    }
+
+    expiration {
+      expired_object_delete_marker = true
     }
   }
 }

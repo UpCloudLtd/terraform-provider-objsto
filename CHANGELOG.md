@@ -5,6 +5,10 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+### Added:
+
+- objsto_bucket_lifecycle_configuration: `expired_object_delete_marker` attribute in `expiration` block for setting automatic deletion of expired object delete markers.
+
 ## [0.3.0]
 
 ### Added:
