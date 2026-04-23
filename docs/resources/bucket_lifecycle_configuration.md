@@ -84,6 +84,7 @@ Optional Attributes:
 
 - `date` (String) The date of the expiration.
 - `days` (Number) The number of days until expiration.
+- `expired_object_delete_marker` (Boolean) Whether to remove expired object delete markers.
 
 
 <a id="nestedblock--rule--filter"></a>
