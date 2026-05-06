@@ -464,6 +464,9 @@ func setLifecycleConfigurationValues(ctx context.Context, data *BucketLifecycleC
 			}
 			ruleData.Filter, d = types.ObjectValueFrom(ctx, value.AttributeTypes(), value)
 			diags.Append(d...)
+		} else {
+			ruleData.Filter = types.ObjectNull(LifecycleConfigurationRuleFilter{}.AttributeTypes())
+			diags.AddWarning("Filter data is missing from the API response", "The lifecycle has likely been created with a deprecated version of the API (PutBucketLifecycle). This resource uses the more recent PutBucketLifecycleConfiguration API.")
 		}
 
 		if rule.NoncurrentVersionExpiration != nil {
