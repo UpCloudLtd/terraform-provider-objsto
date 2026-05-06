@@ -5,6 +5,12 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 ## [Unreleased]
 
+## [0.4.1]
+
+### Fixed
+
+- objsto_bucket_lifecycle_configuration: if `filter` data is missing from the API response when reading the lifecycle configuration, add a warning to diagnostics and set `filter` object to null to avoid value conversion error. This happens if the lifecycle configuration was created with a deprecated version of the API (PutBucketLifecycle).
+
 ## [0.4.0]
 
 ### Added:
@@ -49,7 +55,8 @@ See updating [Changelog example here](https://keepachangelog.com/en/1.0.0/)
 
 - Minimal implementation of bucket, bucket policy, bucket lifecycle configuration, and object resources.
 
-[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/UpCloudLtd/terraform-provider-upcloud/compare/v0.2.1...v0.2.2
